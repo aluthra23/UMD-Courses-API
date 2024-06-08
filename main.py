@@ -1,16 +1,18 @@
-# This is a sample Python script.
+from fastapi import FastAPI
+from course_catalog_scraper.scraper import scrape_course_catalog_data
+from schedule_of_classes_scraper.soc_scraper import scrape_course_data_from_schedule_of_classes
 
-# Press ⌃R to execute it or replace it with your code.
-# Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
+app = FastAPI()
+
+@app.get("/")
+def read():
+    return scrape_course_catalog_data("CMSC")
+
+@app.get("/sections")
+def scrape():
+    return scrape_course_data_from_schedule_of_classes("CMSC351")
 
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press ⌘F8 to toggle the breakpoint.
-
-
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, port=8000)
