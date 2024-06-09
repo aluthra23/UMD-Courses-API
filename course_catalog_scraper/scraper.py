@@ -2,9 +2,11 @@ import requests
 from bs4 import BeautifulSoup
 from helping_files import helper
 import csv
+from course_classes import Course
+from typing import List, Optional
 
 
-def scrape_course_catalog_data(course_acronym):
+def scrape_course_catalog_data(course_acronym) -> List[Course]:
     base_url = "https://academiccatalog.umd.edu/undergraduate/approved-courses/"
     url = f"{base_url}{course_acronym.lower()}/"
 
@@ -18,6 +20,8 @@ def scrape_course_catalog_data(course_acronym):
 
     # Find all courses listed on the page
     courses = soup.find_all('div', class_='courseblock')
+
+    courses_arr = []
 
     # Iterate over each course and extract details
     for course_block in courses:
@@ -54,4 +58,8 @@ def scrape_course_catalog_data(course_acronym):
                 course_dict[label.upper()], course_dict["CROSS-LISTED"] = (
                     helper.string_without_delimiter(helper.remove_period_end(description), "Cross-listed with") )
 
-        return course_dict
+
+        course_info = Course(course_dict)
+        courses_arr.append(course_info)
+
+    return courses_arr
