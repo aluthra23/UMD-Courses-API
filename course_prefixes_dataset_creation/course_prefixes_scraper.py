@@ -4,7 +4,7 @@ import csv
 import pandas as pd
 
 
-def soc_scraper():
+def soc_scraper(file_path='umd_course_prefixes.csv'):
     # URL of the University of Maryland's approved courses page
     url = 'https://app.testudo.umd.edu/soc/'
 
@@ -18,7 +18,7 @@ def soc_scraper():
     # Find all course prefixes and their descriptions
     course_prefixes = soup.find_all('div', class_='course-prefix row')
 
-    with open('umd_course_prefixes.csv', 'w', newline='') as csvfile:
+    with open(file_path, 'w', newline='') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(['COURSE PREFIX', 'FULL FORM'])
 
@@ -27,7 +27,8 @@ def soc_scraper():
             full_form = entry.find('span', class_='prefix-name nine columns').text.strip()
             writer.writerow([course_prefix, full_form])
 
-def course_catalog_scraper(url: str):
+
+def course_catalog_scraper(url: str, file_path='umd_course_prefixes.csv'):
     # Send a GET request to the page
     response = requests.get(url)
     response.raise_for_status()  # Check that the request was successful
@@ -38,9 +39,9 @@ def course_catalog_scraper(url: str):
     courses = soup.find('div', class_='az_sitemap')
     courses = courses.find_all('li')
 
-    with open('umd_course_prefixes.csv', 'a', newline='') as csvfile:
+    with open(file_path, 'a', newline='') as csvfile:
         writer = csv.writer(csvfile)
-        df = pd.read_csv('umd_course_prefixes.csv')
+        df = pd.read_csv(file_path)
         existing_course_prefixes = set(df["COURSE PREFIX"])
 
         for course in courses:

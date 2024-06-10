@@ -11,7 +11,6 @@ from course_classes import Course, Course_With_Section_Info, Course_Prefix
 from gen_eds.main_gen_ed import all_gen_eds_scraper
 from course_classes import Gen_Ed
 
-
 app = FastAPI()
 
 
@@ -40,6 +39,7 @@ def course_data(course_number: str):
     else:
         raise HTTPException(status_code=404, detail="Course not found!")
 
+
 # @app.get("/class_sections/{course_number}/{term_id}/", response_model=List[List[Course_With_Section_Info]])
 # def section_data(term_id: str, course_number: str):
 @app.get("/class_sections/{course_number}/", response_model=List[List[Course_With_Section_Info]])
@@ -63,19 +63,24 @@ def all_general_education_categories():
     else:
         raise HTTPException(status_code=404, detail="Website might be down!")
 
-@app.get("/course_prefixes", response_model=List[Course_Prefix])
-def all_general_education_categories():
-    """
-    Gives a list of all the General Education requirements at the University of Maryland
-    """
-    course_prefixes = update_umd_courses()
 
-    if course_prefixes:
-        return course_prefixes
-    else:
+@app.get("/course_prefixes", response_model=List[Course_Prefix])
+def all_course_prefixes():
+    """
+    Gives a list of all the course prefixes at the University of Maryland
+    """
+    try:
+        course_prefixes = update_umd_courses("./course_prefixes_dataset_creation/umd_course_prefixes.csv")
+
+        if course_prefixes:
+            return course_prefixes
+        else:
+            raise HTTPException(status_code=404, detail="Website might be down!")
+    except:
         raise HTTPException(status_code=404, detail="Website might be down!")
 
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, port=8000)
