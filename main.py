@@ -1,6 +1,5 @@
 from fastapi import FastAPI, HTTPException
 from course_catalog_scraper.scraper import scrape_course_catalog_data
-import course_prefixes_dataset_creation
 from course_prefixes_dataset_creation.main_course_prefixes_scraper import update_umd_courses
 from schedule_of_classes_scraper.soc_scraper import scrape_course_data_from_schedule_of_classes
 import threading

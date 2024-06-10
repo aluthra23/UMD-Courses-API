@@ -128,7 +128,7 @@ def scrape_course_data_from_schedule_of_classes(course_acronym: str, term_id: st
                     description_fields["FORMERLY"],
                     description_fields["RECOMMENDED"],
                     description_fields["CROSS-LISTED WITH"],
-                    description_fields["DESCRIPTION"]
+                    description_fields["DESCRIPTION"].replace("\n", "")
                 )
             )
 
@@ -318,7 +318,7 @@ def update_classes_data(course_number, term_id, open_sections, class_setting, se
             section_data["FORMERLY"],
             section_data["RECOMMENDED"],
             section_data["CROSS-LISTED WITH"],
-            section_data["DESCRIPTION"]
+            section_data["DESCRIPTION"].replace("\n", "")
         )
 
         data.append(course_data)

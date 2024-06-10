@@ -66,7 +66,7 @@ def scrape_courses(courses, course_acronym, specific_course_number) -> List[Cour
         if specific_course_number.upper() not in course_dict["COURSE NUMBER"]:
             continue
 
-        course_dict["DESCRIPTION"] = course_block.find('p', class_='courseblockdesc noindent').text.strip()
+        course_dict["DESCRIPTION"] = str(course_block.find('p', class_='courseblockdesc noindent').text).strip().replace("\n", "")
 
         extras = course_block.find_all('p', class_='courseblockextra noindent')
         for extra in extras:
