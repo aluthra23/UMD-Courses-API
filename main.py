@@ -9,6 +9,7 @@ from uuid import UUID, uuid4
 from course_classes import Course, Course_With_Section_Info, Course_Prefix
 from gen_eds.main_gen_ed import all_gen_eds_scraper
 from course_classes import Gen_Ed
+from term_id_functions import check_term_id
 
 app = FastAPI()
 
@@ -18,7 +19,7 @@ def intro_page():
     return {"message": "Welcome to my UMD Courses API"}
 
 
-@app.get("/classes/{course_number}", response_model=List[Course])
+@app.get("/v1/classes/{course_number}", response_model=List[Course])
 def course_data(course_number: str):
     """
     Gets course data
@@ -41,16 +42,23 @@ def course_data(course_number: str):
 
 # @app.get("/class_sections/{course_number}/{term_id}/", response_model=List[List[Course_With_Section_Info]])
 # def section_data(term_id: str, course_number: str):
-@app.get("/class_sections/{course_number}/", response_model=List[List[Course_With_Section_Info]])
-def section_data(course_number: str):
-    courses_json = scrape_course_data_from_schedule_of_classes(course_number)
+@app.get("/v1/class_sections/{course_number}/{term_id}", response_model=List[List[Course_With_Section_Info]])
+@app.get("/v1/class_sections/{course_number}", response_model=List[List[Course_With_Section_Info]])
+def section_data(course_number: str, term_id: Optional[str] = None):
+    if term_id:
+        check_term_id(term_id)
+
+        courses_json = scrape_course_data_from_schedule_of_classes(course_number, term_id)
+    else:
+        courses_json = scrape_course_data_from_schedule_of_classes(course_number)
+
     if courses_json:
         return courses_json
     else:
         raise HTTPException(status_code=404, detail="Course not found!")
 
 
-@app.get("/all_gen_eds", response_model=List[Gen_Ed])
+@app.get("/v1/geneds", response_model=List[Gen_Ed])
 def all_general_education_categories():
     """
     Gives a list of all the General Education requirements at the University of Maryland
@@ -63,7 +71,7 @@ def all_general_education_categories():
         raise HTTPException(status_code=404, detail="Website might be down!")
 
 
-@app.get("/course_prefixes", response_model=List[Course_Prefix])
+@app.get("/v1/course_prefixes", response_model=List[Course_Prefix])
 def all_course_prefixes():
     """
     Gives a list of all the course prefixes at the University of Maryland
