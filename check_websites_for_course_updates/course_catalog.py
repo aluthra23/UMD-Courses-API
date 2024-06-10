@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 from helping_files import constants
 
 base_url = "https://academiccatalog.umd.edu/undergraduate/approved-courses/"
+second_base_url = "https://academiccatalog.umd.edu/graduate/courses/"
 url = f"{base_url}"
 
 def ensure_no_extra_elements(array : list):
@@ -25,6 +26,10 @@ def ensure_no_extra_elements(array : list):
             continue
 
         course_prefix = course.text[:4]
+        full_form = course.text[7:].strip()
+
+        # print(course_prefix)
+        print(course.text[7:].strip())
 
         if course_prefix in constants.course_acronyms:
             array.remove(course_prefix)
