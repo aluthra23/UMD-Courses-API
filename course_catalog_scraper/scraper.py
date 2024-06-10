@@ -59,7 +59,22 @@ def scrape_course_catalog_data(course_acronym) -> List[Course]:
                     helper.string_without_delimiter(helper.remove_period_end(description), "Cross-listed with") )
 
 
-        course_info = Course(course_dict)
+        course_info = Course(
+            course_dict["COURSE PREFIX"],
+            course_dict["COURSE NUMBER"],
+            course_dict["NAME"],
+            course_dict["CREDITS"],
+            course_dict["DESCRIPTION"],
+            course_dict["PREREQUISITE"],
+            course_dict["RESTRICTION"],
+            course_dict["FORMERLY NAMED"],
+            course_dict["RECOMMENDED"],
+            course_dict["CREDIT ONLY GRANTED FOR"],
+            course_dict["REPEATABLE TO"],
+            course_dict["CROSS-LISTED"],
+            course_dict["COREQUISITE"]
+
+        )
         courses_arr.append(course_info)
 
     return courses_arr
