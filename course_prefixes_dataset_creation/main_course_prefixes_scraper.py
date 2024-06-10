@@ -4,7 +4,7 @@ import pandas as pd
 
 
 
-# def update_umd_courses():
+def update_umd_courses():
     soc_scraper()
     course_catalog_scraper("https://academiccatalog.umd.edu/undergraduate/approved-courses/")
     course_catalog_scraper("https://academiccatalog.umd.edu/graduate/courses/")
