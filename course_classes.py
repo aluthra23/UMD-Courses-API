@@ -3,7 +3,6 @@ from typing import List, Optional
 
 
 class Course(BaseModel):
-    course_prefix: Optional[str]
     course_number: Optional[str]
     name: Optional[str]
     credits: Optional[str]
@@ -17,16 +16,15 @@ class Course(BaseModel):
     cross_listed: Optional[str]
     corequisite: Optional[str]
 
-    def __init__(self, course_prefix: str, course_number: str, name: str, credits: str, description: str,
+    def __init__(self, course_number: str, name: str, credits: str, description: str,
                  prerequisite: str, restriction: str, formerly_named: str, recommended: str,
                  credit_only_granted_for: str, repeatable_to: str, cross_listed: str, corequisite: str):
-        super().__init__(course_prefix=course_prefix, course_number=course_number, name=name,
+        super().__init__(course_number=course_number, name=name,
                          credits=credits, description=description, prerequisite=prerequisite,
                          restriction=restriction, formerly_named=formerly_named, recommended=recommended,
                          credit_only_granted_for=credit_only_granted_for, repeatable_to=repeatable_to,
                          cross_listed=cross_listed, corequisite=corequisite)
 
-        self.course_prefix = course_prefix
         self.course_number = course_number
         self.name = name
         self.credits = credits

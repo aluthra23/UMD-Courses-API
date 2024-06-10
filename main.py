@@ -31,10 +31,10 @@ def course_data(course_number: str):
     else:
         course_prefix = course_number
 
-    course_data = scrape_course_catalog_data(course_prefix, course_number)
+    individual_course_data = scrape_course_catalog_data(course_prefix, course_number)
 
-    if course_data:
-        return course_data
+    if individual_course_data:
+        return individual_course_data
     else:
         raise HTTPException(status_code=404, detail="Course not found!")
 

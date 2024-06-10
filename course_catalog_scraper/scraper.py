@@ -9,7 +9,7 @@ from typing import List, Optional
 def scrape_course_catalog_data(course_acronym, specific_course_number) -> List[Course]:
     base_url = "https://academiccatalog.umd.edu/undergraduate/approved-courses/"
     course_acronym = course_acronym.lower().strip()
-    url = f"{base_url}{course_acronym.lower()}/"
+    url = f"{base_url}{course_acronym}/"
     courses_arr = []
 
     response = requests.get(url)
@@ -44,7 +44,6 @@ def scrape_courses(courses, course_acronym, specific_course_number) -> List[Cour
 
     for course_block in courses:
         course_dict = {
-            "COURSE PREFIX" : course_acronym.upper(),
             "COURSE NUMBER": None,
             "NAME": None,
             "CREDITS": None,
@@ -81,7 +80,6 @@ def scrape_courses(courses, course_acronym, specific_course_number) -> List[Cour
 
 
         course_info = Course(
-            course_dict["COURSE PREFIX"],
             course_dict["COURSE NUMBER"],
             course_dict["NAME"],
             course_dict["CREDITS"],
