@@ -15,7 +15,6 @@ def scrape_course_data_from_schedule_of_classes(course_acronym: str, term_id: st
     # Fetch the web page
     response = requests.get(url)
     if response.status_code != 200:
-        # print(f"Failed to fetch data for {course_acronym}")
         raise HTTPException(status_code=400, detail="couldn't find course")
 
     # Parse the HTML content

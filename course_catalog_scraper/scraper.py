@@ -21,15 +21,12 @@ def scrape_course_catalog_data(course_acronym, specific_course_number) -> List[C
         # Find all courses listed on the page
         courses = soup.find_all('div', class_='courseblock')
         courses_arr = scrape_courses(courses, course_acronym, specific_course_number)
-    else:
-        print(f"Failed to fetch data for {course_acronym}")
 
     base_url = "https://academiccatalog.umd.edu/graduate/courses/"
     url = f"{base_url}{course_acronym.lower()}/"
 
     response = requests.get(url)
     if response.status_code != 200:
-        print(f"Failed to fetch data for {course_acronym}")
         return courses_arr
 
     # Parse the HTML content

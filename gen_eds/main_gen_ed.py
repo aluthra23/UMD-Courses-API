@@ -10,7 +10,6 @@ def all_gen_eds_scraper() -> List[Gen_Ed]:
 
     response = requests.get(url)
     if response.status_code != 200:
-        print(f"Failed to fetch data")
         return []
 
     soup = BeautifulSoup(response.text, 'html.parser')
@@ -21,7 +20,6 @@ def all_gen_eds_scraper() -> List[Gen_Ed]:
     data = []
     # Iterate over each course acronym
     for entry in gen_eds:
-        # print(entry)
         gen_ed = entry.text.strip()
 
         words = gen_ed.split('(')
