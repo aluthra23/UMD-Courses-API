@@ -37,7 +37,14 @@ def course_data(course_number: str):
     Gets course data
     """
 
-    course_data = scrape_course_catalog_data(course_number)
+    if len(course_number) < 4:
+        raise HTTPException(status_code=404, detail="Course not found!")
+    elif len(course_number) > 4:
+        course_prefix = course_number[:4]
+    else:
+        course_prefix = course_number
+
+    course_data = scrape_course_catalog_data(course_prefix, course_number)
 
     if course_data:
         return course_data

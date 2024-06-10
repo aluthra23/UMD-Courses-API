@@ -6,7 +6,7 @@ from course_classes import Course
 from typing import List, Optional
 
 
-def scrape_course_catalog_data(course_acronym) -> List[Course]:
+def scrape_course_catalog_data(course_acronym, specific_course_number) -> List[Course]:
     base_url = "https://academiccatalog.umd.edu/undergraduate/approved-courses/"
     url = f"{base_url}{course_acronym.lower()}/"
 
@@ -20,10 +20,29 @@ def scrape_course_catalog_data(course_acronym) -> List[Course]:
 
     # Find all courses listed on the page
     courses = soup.find_all('div', class_='courseblock')
+    courses_arr = scrape_courses(courses, course_acronym, specific_course_number)
 
+    base_url = "https://academiccatalog.umd.edu/graduate/courses/"
+    url = f"{base_url}{course_acronym.lower()}/"
+
+    response = requests.get(url)
+    if response.status_code != 200:
+        print(f"Failed to fetch data for {course_acronym}")
+        return courses
+
+    # Parse the HTML content
+    soup = BeautifulSoup(response.text, 'html.parser')
+
+    # Find all courses listed on the page
+    courses = soup.find_all('div', class_='courseblock')
+    courses_arr += scrape_courses(courses, course_acronym, specific_course_number)
+
+    return courses_arr
+
+
+def scrape_courses(courses, course_acronym, specific_course_number) -> List[Course]:
     courses_arr = []
 
-    # Iterate over each course and extract details
     for course_block in courses:
         course_dict = {
             "COURSE PREFIX" : course_acronym,
@@ -42,9 +61,12 @@ def scrape_course_catalog_data(course_acronym) -> List[Course]:
             # Add more keys for other miscellaneous data if needed
         }
 
-
         course_title = course_block.find('p', class_='courseblocktitle noindent').strong.text.strip()
         course_dict["COURSE NUMBER"], course_dict["NAME"], course_dict["CREDITS"] = helper.parse_course_string(course_title)
+
+        if specific_course_number.upper() not in course_dict["COURSE NUMBER"]:
+            continue
+
         course_dict["DESCRIPTION"] = course_block.find('p', class_='courseblockdesc noindent').text.strip()
 
         extras = course_block.find_all('p', class_='courseblockextra noindent')
