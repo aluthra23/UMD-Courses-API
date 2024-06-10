@@ -8,19 +8,21 @@ from typing import List, Optional
 
 def scrape_course_catalog_data(course_acronym, specific_course_number) -> List[Course]:
     base_url = "https://academiccatalog.umd.edu/undergraduate/approved-courses/"
+    course_acronym = course_acronym.lower().strip()
     url = f"{base_url}{course_acronym.lower()}/"
+    courses_arr = []
 
     response = requests.get(url)
-    if response.status_code != 200:
+
+    if response.status_code == 200:
+        # Parse the HTML content
+        soup = BeautifulSoup(response.text, 'html.parser')
+
+        # Find all courses listed on the page
+        courses = soup.find_all('div', class_='courseblock')
+        courses_arr = scrape_courses(courses, course_acronym, specific_course_number)
+    else:
         print(f"Failed to fetch data for {course_acronym}")
-        return []
-
-    # Parse the HTML content
-    soup = BeautifulSoup(response.text, 'html.parser')
-
-    # Find all courses listed on the page
-    courses = soup.find_all('div', class_='courseblock')
-    courses_arr = scrape_courses(courses, course_acronym, specific_course_number)
 
     base_url = "https://academiccatalog.umd.edu/graduate/courses/"
     url = f"{base_url}{course_acronym.lower()}/"
@@ -28,7 +30,7 @@ def scrape_course_catalog_data(course_acronym, specific_course_number) -> List[C
     response = requests.get(url)
     if response.status_code != 200:
         print(f"Failed to fetch data for {course_acronym}")
-        return courses
+        return courses_arr
 
     # Parse the HTML content
     soup = BeautifulSoup(response.text, 'html.parser')
@@ -45,7 +47,7 @@ def scrape_courses(courses, course_acronym, specific_course_number) -> List[Cour
 
     for course_block in courses:
         course_dict = {
-            "COURSE PREFIX" : course_acronym,
+            "COURSE PREFIX" : course_acronym.upper(),
             "COURSE NUMBER": None,
             "NAME": None,
             "CREDITS": None,

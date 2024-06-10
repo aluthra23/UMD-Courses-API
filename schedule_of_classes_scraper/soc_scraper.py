@@ -1,23 +1,15 @@
 from typing import List
-
-import pandas as pd
 import requests
 from bs4 import BeautifulSoup
-import csv
-
 from fastapi import HTTPException
-
 from course_classes import Course_Time, Course_With_Section_Info
 from helping_files import helper
-
-# Term ID for the Fall 2024 term
-# term_id = "202408"
 
 # Base URL for the UMD schedule of classes search
 base_url = "https://app.testudo.umd.edu/soc/search"
 
 
-def scrape_course_data_from_schedule_of_classes(term_id: str, course_acronym: str) -> List[List[Course_With_Section_Info]]:
+def scrape_course_data_from_schedule_of_classes(course_acronym: str, term_id: str = "202408") -> List[List[Course_With_Section_Info]]:
     url = f"{base_url}?courseId={course_acronym}&sectionId=&termId={term_id}&_openSectionsOnly=on&creditCompare=%3E%3D&credits=0.0&courseLevelFilter=ALL&instructor=&_facetoface=on&_blended=on&_online=on&courseStartCompare=&courseStartHour=&courseStartMin=&courseStartAM=&courseEndHour=&courseEndMin=&courseEndAM=&teachingCenter=ALL&_classDay1=on&_classDay2=on&_classDay3=on&_classDay4=on&_classDay5=on"
 
     # Fetch the web page

@@ -56,7 +56,6 @@ class Course_Time(BaseModel):
     time: Optional[str]
     room: Optional[str]
 
-
     def __init__(self, class_type, time, room):
         super().__init__(class_type=class_type, time=time, room=room)
         self.class_type = class_type
@@ -134,3 +133,13 @@ class Course_With_Section_Info(BaseModel):
         self.recommended = recommended
         self.cross_listed_with = cross_listed_with
         self.description = description
+
+
+class Course_Prefix(BaseModel):
+    course_prefix: Optional[str]
+    full_form: Optional[str]
+
+    def __init__(self, course_prefix: str, full_form: str):
+        super().__init__(course_prefix=course_prefix, full_form=full_form)
+        self.course_prefix = course_prefix
+        self.full_form = full_form
