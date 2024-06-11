@@ -15,7 +15,8 @@ universal_lock = threading.Lock()
 app = FastAPI(
     title="UMD Courses API",
     version="1.0.0",
-    description="<p>Welcome to the UMD Courses API, an API that provides information about courses at the University of Maryland."
+    description="<p>Welcome to the UMD Courses API, an API that provides information about courses at the University "
+                "of Maryland."
                 "</p><p>This API allows users to:</p>"
                 "<ul>"
                 "<li>Retrieve course details</li>"
@@ -23,25 +24,26 @@ app = FastAPI(
                 "<li>Get a list of all course prefixes and general education requirements</li>"
                 "</ul>"
                 "<p>This API retrieves the data by web scraping two critical websites in real-time: the "
-                "<a href='https://app.testudo.umd.edu/soc/' target='blank'>Schedule of Classes</a>"
-                " and the <a href='https://academiccatalog.umd.edu/' target='blank'>Course Catalog</a> websites "
+                "<a href='https://app.testudo.umd.edu/soc/' target='_blank'>Schedule of Classes</a>"
+                " and the <a href='https://academiccatalog.umd.edu/' target='_blank'>Course Catalog</a> websites "
                 "provided by the University of Maryland.</p>"
                 "<p>This API does not require any authentication but please be respectful of the UMD websites and "
                 "don't load this API with too many requests.</p>"
-                "<h4>Go to the <a href='/docs' target='blank'>Swagger</a> page or '/docs' if you want to see this API "
+                "<h4>Go to the <a href='/docs' target='_blank'>Swagger</a> page or '/docs' if you want to see this API "
                 "in action!</h4>"
                 "<h4>Feel free to use this API and here's the <a href='https://github.com/aluthra23/UMD-Courses-API' "
-                "target='blank'>Github Repository</a>!</h4>"
+                "target='_blank'>Github Repository</a>!</h4>"
                 "<h3>My Relevant Work related to this API: </h3>"
                 "<p>I have constructed datasets about UMD courses using the webscraper mentioned above, which can be "
-                "found in this <a "
-                "href='https://github.com/aluthra23/UMD_Schedule_Web_Scraper' target='blank'>GitHub Repository</a>.</p>"
-                "<p>I have also built a <a ""href='https://umd-chat-bot.streamlit.app/' target='blank'>chat bot</a> "
+                "found in this <a href='https://github.com/aluthra23/UMD_Schedule_Web_Scraper' target='_blank'>GitHub "
+                "Repository</a>.</p>"
+                "<p>I have also built a <a ""href='https://umd-chat-bot.streamlit.app/' target='_blank'>chat bot</a> "
                 "using the constructed datasets, which answers any questions students "
                 "may have about coursework offered at UMD. To learn more about the technical details, here's the <a "
-                "href='https://github.com/aluthra23/UMD-Scheduling-Chat-Bot' target='blank'>GitHub Repository</a>.</p>"
+                "href='https://github.com/aluthra23/UMD-Scheduling-Chat-Bot' target='_blank'>GitHub Repository</a>.</p>"
                 "<p>Feel free to visit the links above, my <a href='https://aluthra23.github.io/personal-website/' "
-                "target='blank'>website</a>, and my <a href=https://github.com/aluthra23 target='blank'>GitHub</a>!</p>",
+                "target='_blank'>website</a>, and my <a href=https://github.com/aluthra23 target='_blank'>GitHub</a>!"
+                "</p>",
 
     contact={
         "name": "Email",
@@ -54,7 +56,7 @@ app = FastAPI(
          responses={404: {"description": "Course not found!"}},
          description="Gets course data for a specific course offered at UMD or a list of courses that match the input "
                      "course number. "
-                     "Scrapes data from UMD's <a href='https://academiccatalog.umd.edu/' target='blank'>Course "
+                     "Scrapes data from UMD's <a href='https://academiccatalog.umd.edu/' target='_blank'>Course "
                      "Catalog</a> website."
          )
 def get_course_data(
@@ -84,7 +86,7 @@ def get_course_data(
                      "of courses with the respective section data that match the inputted course number. Specifying the "
                      "term id or semester is optional and defaults to the current/upcoming semester. Scrapes data "
                      "from UMD's "
-                     "<a href='https://app.testudo.umd.edu/soc/' target='blank'>Schedule of Classes</a> website.")
+                     "<a href='https://app.testudo.umd.edu/soc/' target='_blank'>Schedule of Classes</a> website.")
 def get_courses_and_section_data(
         course_number: str = Path(description="The level/designation of a UMD course, e.g., CMSC131"),
         term_id: str = Query(update_term_id(),
@@ -114,7 +116,7 @@ def get_courses_and_section_data(
 
 @app.get("/v1/geneds", response_model=List[Gen_Ed],
          description="Gives a list of all the General Education requirements at the University of Maryland. Scrapes "
-                     "data from UMD's <a href='https://app.testudo.umd.edu/soc/' target='blank'>Schedule of "
+                     "data from UMD's <a href='https://app.testudo.umd.edu/soc/' target='_blank'>Schedule of "
                      "Classes</a> website."
          )
 def get_all_general_education_categories():
@@ -135,8 +137,8 @@ def get_all_general_education_categories():
 
 @app.get("/v1/course_prefixes", response_model=List[Course_Prefix],
          description="Gives a list of all the course prefixes at the University of Maryland. Scrapes data from UMD's "
-                     "<a href='https://academiccatalog.umd.edu/' target='blank'>Course Catalog</a> and "
-                     "<a href='https://app.testudo.umd.edu/soc/' target='blank'>Schedule of Classes</a> websites."
+                     "<a href='https://academiccatalog.umd.edu/' target='_blank'>Course Catalog</a> and "
+                     "<a href='https://app.testudo.umd.edu/soc/' target='_blank'>Schedule of Classes</a> websites."
          )
 def get_all_course_prefixes():
     """
