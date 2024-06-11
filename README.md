@@ -33,9 +33,11 @@ The API is deployed on Koyeb using its free tier, making it accessible at any ti
 Access the API at [UMD-Courses-API](https://umd-courses-api-aluthra-705eb647.koyeb.app/).
 
 ### Example Endpoints
-- **Retrieve course details:** `/v1/courses/{course_id}`
-- **Access section details:** `/v1/sections/{course_id}/{semester}`
-- **List course prefixes and general education requirements:** `/v1/prefixes`
+- **Retrieve course details:** `/v1/classes/{course_number}`
+- **Access section details:** `/v1/class_sections/{course_number}?term_id={term_id}`
+- **List general education requirements:** `/v1/geneds`
+- **List course prefixes:** `/v1/course_prefixes`
+
 
 ### Versioning
 The current version is 1.0.0. Updates to the API and the README will be made with each new release.
