@@ -1,4 +1,4 @@
-# UMD-Courses-API (1.0.0)
+# UMD Courses API (1.0.0)
 
 ## Introduction
 
