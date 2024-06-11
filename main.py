@@ -54,7 +54,7 @@ class Welcome(BaseModel):
 
 @app.get("/", response_model=Welcome, responses={200: {"description": "Welcome to my UMD Courses API"}},
          include_in_schema=False)
-def intro_page():
+async def intro_page():
     return Welcome("Welcome to my UMD Courses API! Go to /redoc or /docs to see API documentation!")
 
 
@@ -63,7 +63,7 @@ def intro_page():
          description="Gets course data for a specific course offered at UMD or a list of courses that match the input course number. "
                      "Scrapes data from UMD's <a href='https://academiccatalog.umd.edu/' target='blank'>Course Catalog</a> website."
          )
-def get_course_data(
+async def get_course_data(
         course_number: str = Path(description="The level/designation of a UMD course, e.g., CMSC131"),
 ):
     """
@@ -91,7 +91,7 @@ def get_course_data(
                      "term id or semester is optional and defaults to the current/upcoming semester. Scrapes data "
                      "from UMD's "
                      "<a href='https://app.testudo.umd.edu/soc/' target='blank'>Schedule of Classes</a> website.")
-def get_courses_and_section_data(
+async def get_courses_and_section_data(
         course_number: str = Path(description="The level/designation of a UMD course, e.g., CMSC131"),
         term_id: str = Query(update_term_id(),
                              description="The semester the course takes place in YYYYMM format, e.g.,  "
@@ -123,7 +123,7 @@ def get_courses_and_section_data(
                      "data from UMD's <a href='https://app.testudo.umd.edu/soc/' target='blank'>Schedule of "
                      "Classes</a> website."
          )
-def get_all_general_education_categories():
+async def get_all_general_education_categories():
     """
     Gives a list of all the General Education requirements at the University of Maryland
     """
@@ -144,7 +144,7 @@ def get_all_general_education_categories():
                      "<a href='https://academiccatalog.umd.edu/' target='blank'>Course Catalog</a> and "
                      "<a href='https://app.testudo.umd.edu/soc/' target='blank'>Schedule of Classes</a> websites."
          )
-def get_all_course_prefixes():
+async def get_all_course_prefixes():
     """
     Gives a list of all the course prefixes at the University of Maryland
     """
