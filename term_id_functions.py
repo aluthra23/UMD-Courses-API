@@ -23,16 +23,16 @@ def update_term_id():
 
 def check_term_id(term_id):
     if (len(term_id) != 6):
-        raise HTTPException(status_code=404,
+        raise HTTPException(status_code=400,
                             detail="Term ID must be 6 characters long and in YYYYMM format where MM must be 01 or 08!")
     elif not term_id.isdigit():
-        raise HTTPException(status_code=404,
+        raise HTTPException(status_code=400,
                             detail="Term ID must be a number and in YYYYMM format where MM must be 01 or 08!")
-    elif int(term_id[2:4]) < 21:
-        raise HTTPException(status_code=404,
-                            detail="Year must be greater than 2020 and Term ID must be in YYYYMM format where MM must be 01 or 08!")
+    elif int(term_id[0:4]) < datetime.now().year - 1:
+        raise HTTPException(status_code=400,
+                            detail=f"Year must be {datetime.now().year - 1} or greater!")
     elif int(term_id[4:6]) != 1 and int(term_id[4:6]) != 8:
-        raise HTTPException(status_code=404,
-                            detail="Month must be 01 or 08 and Term ID must be in YYYYMM format where MM must be 01 or 08!!")
+        raise HTTPException(status_code=400,
+                            detail="Month must be 01 or 08!")
 
 # print(update_term_id())
