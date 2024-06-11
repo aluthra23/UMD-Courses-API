@@ -14,7 +14,7 @@ This API allows users to:
 ## Data Sources
 
 The API retrieves data by web scraping two critical UMD websites in real-time:
-- [UMD Schedule of Classes](https://app.testudo.umd.edu/soc/)
+- <a href="https://app.testudo.umd.edu/soc/" target="_blank">UMD Schedule of Classes</a>
 - [UMD Course Catalog](https://academiccatalog.umd.edu/)
 
 ## Implementation
