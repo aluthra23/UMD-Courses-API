@@ -4,6 +4,8 @@
 
 UMD-Courses-API is an open-source API developed using the FastAPI web framework. This API provides direct access to data related to University of Maryland (UMD) coursework. The API and its documentation can be accessed [here](https://umd-courses-api-aluthra-705eb647.koyeb.app/).
 
+You can access the Swagger documentation to see this API in action at <a href="https://umd-courses-api-aluthra-705eb647.koyeb.app/docs" target="_blank" rel="noopener noreferrer">/docs</a>.
+
 ## Features
 
 This API allows users to:
