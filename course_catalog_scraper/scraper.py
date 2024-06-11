@@ -60,12 +60,14 @@ def scrape_courses(courses, course_acronym, specific_course_number) -> List[Cour
         }
 
         course_title = course_block.find('p', class_='courseblocktitle noindent').strong.text.strip()
-        course_dict["COURSE NUMBER"], course_dict["NAME"], course_dict["CREDITS"] = helper.parse_course_string(course_title)
+        course_dict["COURSE NUMBER"], course_dict["NAME"], course_dict["CREDITS"] = helper.parse_course_string(
+            course_title)
 
         if specific_course_number.upper() not in course_dict["COURSE NUMBER"]:
             continue
 
-        course_dict["DESCRIPTION"] = str(course_block.find('p', class_='courseblockdesc noindent').text).strip().replace("\n", "")
+        course_dict["DESCRIPTION"] = str(
+            course_block.find('p', class_='courseblockdesc noindent').text).strip().replace("\n", "")
 
         extras = course_block.find_all('p', class_='courseblockextra noindent')
         for extra in extras:
@@ -76,8 +78,7 @@ def scrape_courses(courses, course_acronym, specific_course_number) -> List[Cour
                 course_dict[label.upper()] = helper.remove_period_end(description)
             else:
                 course_dict[label.upper()], course_dict["CROSS-LISTED"] = (
-                    helper.string_without_delimiter(helper.remove_period_end(description), "Cross-listed with") )
-
+                    helper.string_without_delimiter(helper.remove_period_end(description), "Cross-listed with"))
 
         course_info = Course(
             course_dict["COURSE NUMBER"],
