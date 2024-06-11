@@ -52,12 +52,6 @@ class Welcome(BaseModel):
         self.message = message
 
 
-@app.get("/", response_model=Welcome, responses={200: {"description": "Welcome to my UMD Courses API"}},
-         include_in_schema=False)
-async def intro_page():
-    return Welcome("Welcome to my UMD Courses API! Go to /redoc or /docs to see API documentation!")
-
-
 @app.get("/v1/classes/{course_number}", response_model=List[Course],
          responses={404: {"description": "Course not found!"}},
          description="Gets course data for a specific course offered at UMD or a list of courses that match the input course number. "
