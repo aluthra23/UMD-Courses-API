@@ -150,7 +150,7 @@ def get_all_course_prefixes():
     return update_umd_courses("./course_prefixes_dataset_creation/umd_course_prefixes.csv")
 
 
-if __name__ == "__main__":
-    import uvicorn
-
-    uvicorn.run(app, port=8000)
+# if __name__ == "__main__":
+#     import uvicorn
+#
+#     uvicorn.run(app, port=8000)
