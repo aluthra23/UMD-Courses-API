@@ -25,6 +25,7 @@ app = FastAPI(
                 "provided by the University of Maryland.</p>"
                 "<p>This API does not require any authentication but please be respectful of the UMD websites and "
                 "don't load this API with too many requests.</p>"
+                "<h4>Go to the <a href='/docs' target='blank'>Swagger</a> page or '/docs' if you want to see this API in action!</h4>"
                 "<h4>Feel free to use this API and here's the <a href='https://github.com/aluthra23/UMD-Courses-API' target='blank'>Github Repository</a>!</h4>"
                 "<h3>My Relevant Work related to this API: </h3>"
                 "<p>I have constructed datasets about UMD courses using the webscraper mentioned above, which can be found in this <a "
@@ -38,7 +39,8 @@ app = FastAPI(
 
     contact={
         "name": "Email",
-        "email": "aravluthra@gmail.com", }
+        "email": "aravluthra@gmail.com"},
+    redoc_url="/",
 )
 
 
@@ -150,7 +152,7 @@ def get_all_course_prefixes():
     return update_umd_courses("./course_prefixes_dataset_creation/umd_course_prefixes.csv")
 
 
-# if __name__ == "__main__":
-#     import uvicorn
-#
-#     uvicorn.run(app, port=8000)
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(app, port=8000)
