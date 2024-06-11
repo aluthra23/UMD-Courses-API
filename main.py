@@ -53,7 +53,7 @@ class Welcome(BaseModel):
 @app.get("/", response_model=Welcome, responses={200: {"description": "Welcome to my UMD Courses API"}},
          include_in_schema=False)
 def intro_page():
-    return Welcome("Welcome to my UMD Courses API")
+    return Welcome("Welcome to my UMD Courses API! Go to /redoc or /docs to see API documentation!")
 
 
 @app.get("/v1/classes/{course_number}", response_model=List[Course],
