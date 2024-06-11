@@ -25,7 +25,7 @@ app = FastAPI(
                 "provided by the University of Maryland.</p>"
                 "<p>This API does not require any authentication but please be respectful of the UMD websites and "
                 "don't load this API with too many requests.</p>"
-                "<p>Feel free to use this API!</p>"
+                "<h4>Feel free to use this API and here's the <a href='https://github.com/aluthra23/UMD-Courses-API' target='blank'>Github Repository</a>!</h4>"
                 "<h3>My Relevant Work related to this API: </h3>"
                 "<p>I have constructed datasets about UMD courses using the webscraper mentioned above, which can be found in this <a "
                 "href='https://github.com/aluthra23/UMD_Schedule_Web_Scraper' target='blank'>GitHub Repository</a>.</p>"
