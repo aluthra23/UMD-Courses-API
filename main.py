@@ -47,7 +47,7 @@ class Welcome(BaseModel):
 
     def __init__(self, message: str):
         super().__init__(message=message)
-        self.message = "Welcome to my UMD Courses API"
+        self.message = message
 
 
 @app.get("/", response_model=Welcome, responses={200: {"description": "Welcome to my UMD Courses API"}},
