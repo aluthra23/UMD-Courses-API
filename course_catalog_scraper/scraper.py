@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 from helping_files import helper
 import csv
 from course_classes import Course
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 
 def scrape_course_catalog_data(course_acronym, specific_course_number) -> List[Course]:
@@ -11,6 +11,7 @@ def scrape_course_catalog_data(course_acronym, specific_course_number) -> List[C
     course_acronym = course_acronym.lower().strip()
     url = f"{base_url}{course_acronym}/"
     courses_arr = []
+    used_courses = set()
 
     response = requests.get(url)
 
@@ -20,7 +21,7 @@ def scrape_course_catalog_data(course_acronym, specific_course_number) -> List[C
 
         # Find all courses listed on the page
         courses = soup.find_all('div', class_='courseblock')
-        courses_arr = scrape_courses(courses, course_acronym, specific_course_number)
+        courses_arr, used_courses = scrape_courses(courses, course_acronym, specific_course_number, used_courses)
 
     base_url = "https://academiccatalog.umd.edu/graduate/courses/"
     url = f"{base_url}{course_acronym.lower()}/"
@@ -34,12 +35,15 @@ def scrape_course_catalog_data(course_acronym, specific_course_number) -> List[C
 
     # Find all courses listed on the page
     courses = soup.find_all('div', class_='courseblock')
-    courses_arr += scrape_courses(courses, course_acronym, specific_course_number)
+    new_courses_arr, used_courses = scrape_courses(courses, course_acronym, specific_course_number, used_courses)
+
+    courses_arr.extend(new_courses_arr)
+
 
     return courses_arr
 
 
-def scrape_courses(courses, course_acronym, specific_course_number) -> List[Course]:
+def scrape_courses(courses, course_acronym, specific_course_number, used_courses: set) -> tuple[list[Course], set]:
     courses_arr = []
 
     for course_block in courses:
@@ -62,6 +66,9 @@ def scrape_courses(courses, course_acronym, specific_course_number) -> List[Cour
         course_title = course_block.find('p', class_='courseblocktitle noindent').strong.text.strip()
         course_dict["COURSE NUMBER"], course_dict["NAME"], course_dict["CREDITS"] = helper.parse_course_string(
             course_title)
+
+        if course_dict["COURSE NUMBER"] in used_courses:
+            continue
 
         if specific_course_number.upper() not in course_dict["COURSE NUMBER"]:
             continue
@@ -96,5 +103,6 @@ def scrape_courses(courses, course_acronym, specific_course_number) -> List[Cour
 
         )
         courses_arr.append(course_info)
+        used_courses.add(course_dict["COURSE NUMBER"])
 
-    return courses_arr
+    return courses_arr, used_courses
