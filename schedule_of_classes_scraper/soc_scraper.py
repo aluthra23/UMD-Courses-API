@@ -9,6 +9,15 @@ from term_id_functions import update_term_id
 # Base URL for the UMD schedule of classes search
 base_url = "https://app.testudo.umd.edu/soc/search"
 
+def find_message_div(time):
+    # Find all divs that have 'class' in their class name
+    message_divs = time.find_all('div', class_=lambda x: x and 'class' in x.lower())
+
+    # Return the text of the first matching div, or None if none found
+    if message_divs:
+        return message_divs[0].text.strip()
+    return None
+
 
 def scrape_course_data_from_schedule_of_classes(course_acronym: str, term_id: str = update_term_id()) -> List[Course_With_Section_Info]:
     url = f"{base_url}?courseId={course_acronym}&sectionId=&termId={term_id}&_openSectionsOnly=on&creditCompare=%3E%3D&credits=0.0&courseLevelFilter=ALL&instructor=&_facetoface=on&_blended=on&_online=on&courseStartCompare=&courseStartHour=&courseStartMin=&courseStartAM=&courseEndHour=&courseEndMin=&courseEndAM=&teachingCenter=ALL&_classDay1=on&_classDay2=on&_classDay3=on&_classDay4=on&_classDay5=on"
@@ -230,17 +239,12 @@ def update_classes_data(course_number, term_id, open_sections, class_setting, se
                     end_time = time.find('span', class_='class-end-time').text.strip()
                     class_time = f"{days} {start_time}-{end_time}"
             else:
-                message = time.find('span', class_='elms-class-message')
-                if message:
-                    message = message.text.strip()
-                else:
-                    message = time.find('div', class_='push_one eight columns class-message')
+                message = find_message_div(time)
+                if message is None:
+                    # Handle case where no matching div was found
+                    message = "No class message found"
 
-                    if message:
-                        message = message.text.strip()
-                    else:
-                        message = time.find('div', class_='push_two eight columns class-message').text.strip()
-
+                section_data["UNSPECIFIED TIME MESSAGE"] = message
                 class_time = message
 
             class_type = time.find('div', class_='two columns')
