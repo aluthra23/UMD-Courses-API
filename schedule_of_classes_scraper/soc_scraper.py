@@ -213,8 +213,8 @@ def update_classes_data(course_number, term_id, open_sections, class_setting, se
         open_seats = str(section.find('span', class_='open-seats-count').text).strip()
         section_data["OPEN SEATS"] = int(open_seats)
 
-        waitlist_seats = str(section.find('span', class_='waitlist-count').text).strip()
-        section_data["WAITLIST COUNT"] = int(waitlist_seats)
+        waitlist_span = section.find('span', class_='waitlist-count')
+        section_data["WAITLIST COUNT"] = int(waitlist_span.text.strip()) if waitlist_span else 0
 
         times = section.find('div', class_="class-days-container")
         times = times.find_all('div', class_='row')
