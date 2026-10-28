@@ -1,32 +1,17 @@
-import csv
-import requests
 from bs4 import BeautifulSoup
 from course_classes import Gen_Ed
+from helping_files import http_utils
 from typing import List
 
 
 def all_gen_eds_scraper() -> List[Gen_Ed]:
-    url = "https://app.testudo.umd.edu/soc/gen-ed/"
-
-    response = requests.get(url)
-    if response.status_code != 200:
-        return []
-
+    """Every gen-ed category on Testudo. Raises on network/HTTP failures."""
+    response = http_utils.fetch("https://app.testudo.umd.edu/soc/gen-ed/")
     soup = BeautifulSoup(response.text, 'html.parser')
 
-    # Find all courses listed on the page
-    gen_eds = soup.find_all('div', class_='subcategory')
-
     data = []
-    # Iterate over each course acronym
-    for entry in gen_eds:
-        gen_ed = entry.text.strip()
-
-        words = gen_ed.split('(')
-
-        full_form = f"{words[0].strip()}"
-        acronym = f"{words[1][:-1].strip()}"
-
-        data.append(Gen_Ed(acronym, full_form))
-
+    for entry in soup.find_all('div', class_='subcategory'):
+        full_form, separator, acronym = entry.text.strip().partition('(')
+        if separator:
+            data.append(Gen_Ed(acronym.rstrip(')').strip(), full_form.strip()))
     return data

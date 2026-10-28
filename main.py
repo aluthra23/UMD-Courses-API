@@ -1,16 +1,18 @@
-from fastapi import FastAPI, HTTPException, Query, Path
-from course_catalog_scraper.scraper import scrape_course_catalog_data
-from course_prefixes_dataset_creation.main_course_prefixes_scraper import update_umd_courses
-from schedule_of_classes_scraper.soc_scraper import scrape_course_data_from_schedule_of_classes
-from pydantic import BaseModel
-from typing import List, Optional
-from course_classes import Course, Course_With_Section_Info, Course_Prefix
-from gen_eds.main_gen_ed import all_gen_eds_scraper
-from course_classes import Gen_Ed
-from term_id_functions import check_term_id, update_term_id
 import threading
+from typing import List, Optional
+
+import requests
+from fastapi import FastAPI, HTTPException, Query, Path
+
+from course_catalog_scraper.scraper import scrape_course_catalog_data
+from course_classes import Course, Course_Prefix, Course_With_Section_Info, Gen_Ed
+from course_prefixes_dataset_creation.main_course_prefixes_scraper import update_umd_courses
+from gen_eds.main_gen_ed import all_gen_eds_scraper
+from schedule_of_classes_scraper.soc_scraper import scrape_course_data_from_schedule_of_classes
+from term_id_functions import check_term_id, update_term_id
 
 universal_lock = threading.Lock()
+UMD_UNAVAILABLE = HTTPException(status_code=503, detail="Server Issues: UMD Websites are currently unavailable")
 
 app = FastAPI(
     title="UMD Courses API",
@@ -34,13 +36,12 @@ app = FastAPI(
                 "<h4>Feel free to use this API and here's the <a href='https://github.com/aluthra23/UMD-Courses-API' "
                 "target='_blank'>Github Repository</a>!</h4>"
                 "<h3>My Relevant Work related to this API: </h3>"
-                "<p>I have constructed datasets about UMD courses using the webscraper mentioned above, which can be "
-                "found in this <a href='https://github.com/aluthra23/UMD_Schedule_Web_Scraper' target='_blank'>GitHub "
-                "Repository</a>.</p>"
-                "<p>I have also built a <a ""href='https://umd-chat-bot.streamlit.app/' target='_blank'>chat bot</a> "
-                "using the constructed datasets, which answers any questions students "
-                "may have about coursework offered at UMD. To learn more about the technical details, here's the <a "
-                "href='https://github.com/aluthra23/UMD-Scheduling-Chat-Bot' target='_blank'>GitHub Repository</a>.</p>"
+                "<p>I have also built a <a href='https://umd-chatbot.vercel.app/' target='_blank'>chat bot</a> "
+                "that answers students' questions about UMD coursework. Its "
+                "<a href='https://github.com/aluthra23/UMD-Scheduling-Chatbot-2.0' target='_blank'>web app</a> searches "
+                "course data that a <a href='https://github.com/aluthra23/UMD-Scheduling-Chat-Bot' target='_blank'>"
+                "scraping pipeline</a> keeps up to date, and that pipeline uses this API to detect newly published "
+                "semesters.</p>"
                 "<p>Feel free to visit the links above, my <a href='https://aluthra23.github.io/personal-website/' "
                 "target='_blank'>website</a>, and my <a href=https://github.com/aluthra23 target='_blank'>GitHub</a>!"
                 "</p>",
@@ -71,7 +72,10 @@ def get_course_data(
 
     course_prefix = course_number[:4]
 
-    individual_course_data = scrape_course_catalog_data(course_prefix, course_number)
+    try:
+        individual_course_data = scrape_course_catalog_data(course_prefix, course_number)
+    except requests.RequestException:
+        raise UMD_UNAVAILABLE
 
     if individual_course_data:
         return individual_course_data
@@ -89,24 +93,21 @@ def get_course_data(
                      "<a href='https://app.testudo.umd.edu/soc/' target='_blank'>Schedule of Classes</a> website.")
 def get_courses_and_section_data(
         course_number: str = Path(description="The level/designation of a UMD course, e.g., CMSC131"),
-        term_id: str = Query(update_term_id(),
-                             description="The semester the course takes place in YYYYMM format, e.g.,  "
-                                         "202408 (Fall 2022). If not provided, the current/upcoming semester is used.")
+        term_id: Optional[str] = Query(None,
+                                       description="The semester the course takes place in YYYYMM format, e.g., "
+                                                   "202608 (Fall 2026). If not provided, the current/upcoming "
+                                                   "semester is used.")
 ):
     """
     Gets course section data for a specific course offered at UMD or a list of courses that match the input course number.
-
-    :param course_number:
-    :param term_id:
-    :return:
     """
+    term_id = term_id or update_term_id()
+    check_term_id(term_id)
 
-    if term_id and term_id != update_term_id():
-        check_term_id(term_id)
-
+    try:
         courses_json = scrape_course_data_from_schedule_of_classes(course_number, term_id)
-    else:
-        courses_json = scrape_course_data_from_schedule_of_classes(course_number)
+    except requests.RequestException:
+        raise UMD_UNAVAILABLE
 
     if courses_json:
         return courses_json
@@ -126,13 +127,11 @@ def get_all_general_education_categories():
 
     try:
         all_gen_eds = all_gen_eds_scraper()
-
-        if all_gen_eds:
-            return all_gen_eds
-        else:
-            raise HTTPException(status_code=503, detail="Server Issues: UMD Websites are currently unavailable")
-    except:
-        raise HTTPException(status_code=503, detail="Server Issues: UMD Websites are currently unavailable")
+    except requests.RequestException:
+        raise UMD_UNAVAILABLE
+    if not all_gen_eds:
+        raise UMD_UNAVAILABLE
+    return all_gen_eds
 
 
 @app.get("/v1/course_prefixes", response_model=List[Course_Prefix],
@@ -145,7 +144,10 @@ def get_all_course_prefixes():
     Gives a list of all the course prefixes at the University of Maryland
     """
     with universal_lock:
-        return update_umd_courses("./course_prefixes_dataset_creation/umd_course_prefixes.csv")
+        try:
+            return update_umd_courses("./course_prefixes_dataset_creation/umd_course_prefixes.csv")
+        except requests.RequestException:
+            raise UMD_UNAVAILABLE
 
 
 if __name__ == "__main__":

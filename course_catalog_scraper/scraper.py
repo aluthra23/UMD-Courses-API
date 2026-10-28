@@ -1,44 +1,28 @@
-import requests
 from bs4 import BeautifulSoup
-from helping_files import helper
-import csv
+from helping_files import helper, http_utils
 from course_classes import Course
-from typing import List, Optional, Tuple
+from typing import List
+
+CATALOG_URLS = (
+    "https://academiccatalog.umd.edu/undergraduate/approved-courses/",
+    "https://academiccatalog.umd.edu/graduate/courses/",
+)
 
 
 def scrape_course_catalog_data(course_acronym, specific_course_number) -> List[Course]:
-    base_url = "https://academiccatalog.umd.edu/undergraduate/approved-courses/"
+    """Undergraduate and graduate catalog entries matching the course number. Raises on network/HTTP failures."""
     course_acronym = course_acronym.lower().strip()
-    url = f"{base_url}{course_acronym}/"
     courses_arr = []
     used_courses = set()
 
-    response = requests.get(url)
-
-    if response.status_code == 200:
-        # Parse the HTML content
+    for base_url in CATALOG_URLS:
+        response = http_utils.fetch(f"{base_url}{course_acronym}/", allow_not_found=True)
+        if response is None:
+            continue
         soup = BeautifulSoup(response.text, 'html.parser')
-
-        # Find all courses listed on the page
-        courses = soup.find_all('div', class_='courseblock')
-        courses_arr, used_courses = scrape_courses(courses, course_acronym, specific_course_number, used_courses)
-
-    base_url = "https://academiccatalog.umd.edu/graduate/courses/"
-    url = f"{base_url}{course_acronym.lower()}/"
-
-    response = requests.get(url)
-    if response.status_code != 200:
-        return courses_arr
-
-    # Parse the HTML content
-    soup = BeautifulSoup(response.text, 'html.parser')
-
-    # Find all courses listed on the page
-    courses = soup.find_all('div', class_='courseblock')
-    new_courses_arr, used_courses = scrape_courses(courses, course_acronym, specific_course_number, used_courses)
-
-    courses_arr.extend(new_courses_arr)
-
+        new_courses, used_courses = scrape_courses(soup.find_all('div', class_='courseblock'), course_acronym,
+                                                   specific_course_number, used_courses)
+        courses_arr.extend(new_courses)
 
     return courses_arr
 
@@ -63,9 +47,11 @@ def scrape_courses(courses, course_acronym, specific_course_number, used_courses
             # Add more keys for other miscellaneous data if needed
         }
 
-        course_title = course_block.find('p', class_='courseblocktitle noindent').strong.text.strip()
+        title = course_block.find('p', class_='courseblocktitle noindent')
+        if title is None or title.strong is None:
+            continue
         course_dict["COURSE NUMBER"], course_dict["NAME"], course_dict["CREDITS"] = helper.parse_course_string(
-            course_title)
+            title.strong.text.strip())
 
         if course_dict["COURSE NUMBER"] in used_courses:
             continue
@@ -73,8 +59,8 @@ def scrape_courses(courses, course_acronym, specific_course_number, used_courses
         if specific_course_number.upper() not in course_dict["COURSE NUMBER"]:
             continue
 
-        course_dict["DESCRIPTION"] = str(
-            course_block.find('p', class_='courseblockdesc noindent').text).strip().replace("\n", "")
+        description = helper.text_of(course_block, 'p', 'courseblockdesc noindent')
+        course_dict["DESCRIPTION"] = description.replace("\n", "") if description else None
 
         extras = course_block.find_all('p', class_='courseblockextra noindent')
         for extra in extras:

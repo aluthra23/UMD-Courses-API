@@ -3,28 +3,22 @@ from datetime import datetime
 from fastapi import HTTPException
 
 
+def default_term_id(now=None):
+    """The current or upcoming UMD term: spring through Feb 20, fall through September, then next spring."""
+    now = now or datetime.now()
+    if now.month == 1 or (now.month == 2 and now.day <= 20):
+        return f"{now.year}01"
+    if now.month <= 9:
+        return f"{now.year}08"
+    return f"{now.year + 1}01"
+
+
 def update_term_id():
-    """
-    Updates the term_id for the current semester
-    """
-    now_time = datetime.now()
-    current_day = now_time.day
-    current_month = now_time.month
-    current_year = now_time.year
+    return default_term_id()
 
-
-    if current_month <= 2 and current_day <= 20:
-        term_id = f"{current_year}01"
-    elif current_month <= 9:
-        term_id = f"{current_year}08"
-    else:
-        term_id = f"{current_year + 1}01"
-
-
-    return term_id.strip()
 
 def check_term_id(term_id):
-    if (len(term_id) != 6):
+    if len(term_id) != 6:
         raise HTTPException(status_code=400,
                             detail="Term ID must be 6 characters long and in YYYYMM format where MM must be 01 or 08!")
     elif not term_id.isdigit():
@@ -36,5 +30,3 @@ def check_term_id(term_id):
     elif int(term_id[4:6]) != 1 and int(term_id[4:6]) != 8:
         raise HTTPException(status_code=400,
                             detail="Month must be 01 or 08!")
-
-# print(update_term_id())

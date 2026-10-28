@@ -1,54 +1,45 @@
-from typing import List
-import requests
+from typing import List, Optional
+
 from bs4 import BeautifulSoup
-from fastapi import HTTPException
+
 from course_classes import Course_Time, Course_With_Section_Info
-from helping_files import helper
+from helping_files import helper, http_utils
 from term_id_functions import update_term_id
 
-# Base URL for the UMD schedule of classes search
 base_url = "https://app.testudo.umd.edu/soc/search"
 
-def find_message_div(time):
-    # Find all divs that have 'class' in their class name
-    message_divs = time.find_all('div', class_=lambda x: x and 'class' in x.lower())
 
-    # Return the text of the first matching div, or None if none found
+def find_message_div(time):
+    message_divs = time.find_all('div', class_=lambda x: x and 'class' in x.lower())
     if message_divs:
         return message_divs[0].text.strip()
     return None
 
 
-def scrape_course_data_from_schedule_of_classes(course_acronym: str, term_id: str = update_term_id()) -> List[Course_With_Section_Info]:
+def clean_description(description: Optional[str]) -> Optional[str]:
+    return description.replace("\n", "") if description else description
+
+
+def scrape_course_data_from_schedule_of_classes(course_acronym: str, term_id: Optional[str] = None) -> List[Course_With_Section_Info]:
+    """Scrape Testudo for every course matching course_acronym. Raises on network/HTTP failures."""
+    term_id = term_id or update_term_id()
     url = f"{base_url}?courseId={course_acronym}&sectionId=&termId={term_id}&_openSectionsOnly=on&creditCompare=%3E%3D&credits=0.0&courseLevelFilter=ALL&instructor=&_facetoface=on&_blended=on&_online=on&courseStartCompare=&courseStartHour=&courseStartMin=&courseStartAM=&courseEndHour=&courseEndMin=&courseEndAM=&teachingCenter=ALL&_classDay1=on&_classDay2=on&_classDay3=on&_classDay4=on&_classDay5=on"
 
-    # Fetch the web page
-    response = requests.get(url)
-    if response.status_code != 200:
-        raise HTTPException(status_code=400, detail="couldn't find course")
-
-    # Parse the HTML content
+    response = http_utils.fetch(url)
     soup = BeautifulSoup(response.text, 'html.parser')
 
-    courses = soup.find_all('div', class_='course')
-
     all_courses = []
-    for course in courses:
-        course_number = course.find('div', class_='course-id').text.strip()
+    for course in soup.find_all('div', class_='course'):
+        course_number = helper.text_of(course, 'div', 'course-id')
+        if not course_number:
+            continue
 
-        section_title = course.find('span', class_='course-title').text.strip()
-
-        section_min_credits = course.find('span', class_='course-min-credits')
-        if section_min_credits:
-            section_min_credits = int(section_min_credits.text.strip())
-
-            section_max_credits = course.find('span', class_='course-max-credits')
-            if section_max_credits:
-                section_max_credits = int(section_max_credits.text.strip())
-            else:
-                section_max_credits = section_min_credits
-
-        section_grading = str(course.find('span', class_='grading-method').text).strip()
+        section_title = helper.text_of(course, 'span', 'course-title')
+        section_min_credits = helper.parse_int(helper.text_of(course, 'span', 'course-min-credits'))
+        section_max_credits = helper.parse_int(helper.text_of(course, 'span', 'course-max-credits'))
+        if section_max_credits is None:
+            section_max_credits = section_min_credits
+        section_grading = helper.text_of(course, 'span', 'grading-method')
 
         description_fields = {
             "GEN_EDS FULFILLED": "",
@@ -62,11 +53,8 @@ def scrape_course_data_from_schedule_of_classes(course_acronym: str, term_id: st
             "DESCRIPTION": None,
         }
 
-        descriptions = course.find('div', class_='approved-course-texts-container')
-        if descriptions:
-            descriptions = course.find_all('div', class_='approved-course-text')
-
-            for description in descriptions:
+        if course.find('div', class_='approved-course-texts-container'):
+            for description in course.find_all('div', class_='approved-course-text'):
                 description_fields = helper.extract_course_details(html_content=str(description),
                                                                    existing_dict=description_fields,
                                                                    actual_html=description)
@@ -77,70 +65,31 @@ def scrape_course_data_from_schedule_of_classes(course_acronym: str, term_id: st
                                                                         actual_html=descriptions)
 
         gen_eds = course.find('div', class_='gen-ed-codes-group six columns')
-
         if gen_eds and str(gen_eds.text).strip():
             description_fields["GEN_EDS FULFILLED"] = helper.remove_all_whitespace(gen_eds.text.strip())
 
-        open_sections = course.find_all('div', class_='section delivery-f2f')
-        classes = update_classes_data(course_number, term_id, open_sections,
-                                      class_setting="NORMAL",
-                                      section_title=section_title,
-                                      section_min_credits=section_min_credits,
-                                      section_max_credits=section_max_credits,
-                                      section_grading=section_grading,
-                                      description_fields=description_fields)
-
-        # Blended Classes
-        open_sections = course.find_all('div', class_='section delivery-blended')
-        classes += update_classes_data(course_number, term_id, open_sections,
-                                       class_setting="BLENDED",
-                                       section_title=section_title,
-                                       section_min_credits=section_min_credits,
-                                       section_max_credits=section_max_credits,
-                                       section_grading=section_grading,
-                                       description_fields=description_fields)
-
-        # Online Classes
-        open_sections = course.find_all('div', class_='section delivery-online')
-        classes += update_classes_data(course_number, term_id, open_sections,
-                                       class_setting="ONLINE",
-                                       section_title=section_title,
-                                       section_min_credits=section_min_credits,
-                                       section_max_credits=section_max_credits,
-                                       section_grading=section_grading,
-                                       description_fields=description_fields)
+        shared = dict(section_title=section_title, section_min_credits=section_min_credits,
+                      section_max_credits=section_max_credits, section_grading=section_grading,
+                      description_fields=description_fields)
+        classes = update_classes_data(course_number, term_id, course.find_all('div', class_='section delivery-f2f'),
+                                      class_setting="NORMAL", **shared)
+        classes += update_classes_data(course_number, term_id, course.find_all('div', class_='section delivery-blended'),
+                                       class_setting="BLENDED", **shared)
+        classes += update_classes_data(course_number, term_id, course.find_all('div', class_='section delivery-online'),
+                                       class_setting="ONLINE", **shared)
 
         if not classes:
-            classes = []
-            classes.append(
+            classes = [
                 Course_With_Section_Info(
-                    course_number,
-                    section_title,
-                    term_id,
-                    section_min_credits,
-                    section_max_credits,
-                    section_grading,
-                    description_fields["GEN_EDS FULFILLED"],
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    [],
-                    None,
-                    None,
-                    None,
-                    None,
-                    description_fields["PREREQUISITE"],
-                    description_fields["COREQUISITE"],
-                    description_fields["RESTRICTION"],
-                    description_fields["CREDIT ONLY GRANTED FOR"],
-                    description_fields["FORMERLY"],
-                    description_fields["RECOMMENDED"],
-                    description_fields["CROSS-LISTED WITH"],
-                    description_fields["DESCRIPTION"].replace("\n", "")
+                    course_number, section_title, term_id, section_min_credits, section_max_credits,
+                    section_grading, description_fields["GEN_EDS FULFILLED"],
+                    None, None, None, None, None, [], None, None, None, None,
+                    description_fields["PREREQUISITE"], description_fields["COREQUISITE"],
+                    description_fields["RESTRICTION"], description_fields["CREDIT ONLY GRANTED FOR"],
+                    description_fields["FORMERLY"], description_fields["RECOMMENDED"],
+                    description_fields["CROSS-LISTED WITH"], clean_description(description_fields["DESCRIPTION"]),
                 )
-            )
+            ]
 
         all_courses += classes
 
@@ -152,179 +101,79 @@ def update_classes_data(course_number, term_id, open_sections, class_setting, se
     data = []
 
     for section in open_sections:
-        section_data = {
-            "COURSE NUMBER": course_number,
-            "COURSE TITLE": section_title,
-            "SEMESTER": term_id,
-            "MINIMUM CREDITS": section_min_credits,
-            "MAXIMUM CREDITS": section_max_credits,
-            "GRADING METHOD": section_grading,
-            "GEN_EDS FULFILLED": description_fields["GEN_EDS FULFILLED"],
-            "SECTION ID": None,
-            "INSTRUCTOR": None,
-            "TOTAL SEATS": None,
-            "OPEN SEATS": None,
-            "WAITLIST COUNT": None,
-            "CLASS TIMES": [],
-            "IS NORMAL": 0,
-            "IS BLENDED (NORMAL AND ONLINE)": 0,
-            "IS ONLINE": 0,
-            "SPECIAL RESTRICTION": None,
-            "PREREQUISITE": description_fields["PREREQUISITE"],
-            "COREQUISITE": description_fields["COREQUISITE"],
-            "RESTRICTION": description_fields["RESTRICTION"],
-            "CREDIT ONLY GRANTED FOR": description_fields["CREDIT ONLY GRANTED FOR"],
-            "FORMERLY": description_fields["FORMERLY"],
-            "RECOMMENDED": description_fields["RECOMMENDED"],
-            "CROSS-LISTED WITH": description_fields["CROSS-LISTED WITH"],
-            "DESCRIPTION": description_fields["DESCRIPTION"],
-        }
+        section_id = helper.text_of(section, 'span', 'section-id')
+        if not section_id:
+            continue
 
-        if class_setting == 'NORMAL':
-            section_data["IS NORMAL"] = 1
-        elif class_setting == 'ONLINE':
-            section_data["IS ONLINE"] = 1
-        else:
-            section_data["IS NORMAL"] = 1
-            section_data["IS ONLINE"] = 1
-            section_data["IS BLENDED (NORMAL AND ONLINE)"] = 1
+        is_normal = 1 if class_setting in ("NORMAL", "BLENDED") else 0
+        is_online = 1 if class_setting in ("ONLINE", "BLENDED") else 0
+        is_blended = 1 if class_setting == "BLENDED" else 0
 
-        section_id = str(section.find('span', class_='section-id').text).strip()
-        section_data["SECTION ID"] = section_id
+        instructors = [span.text.strip() for span in section.find_all('span', class_='section-instructor') if span.text.strip()]
 
-        section_instructors = section.find_all('span', class_='section-instructor')
-
-        if len(section_instructors) > 1:
-            instructors = ""
-            for i, section_instructor in enumerate(section_instructors):
-                instructors += str(section_instructor.text).strip()
-
-                if i + 1 != len(section_instructors):
-                    instructors += ", "
-
-            section_data["INSTRUCTOR"] = instructors
-        else:
-            section_instructor = str(section.find('span', class_='section-instructor').text).strip()
-            section_data["INSTRUCTOR"] = section_instructor
-
-        total_seats = str(section.find('span', class_='total-seats-count').text).strip()
-        section_data["TOTAL SEATS"] = int(total_seats)
-
-        open_seats = str(section.find('span', class_='open-seats-count').text).strip()
-        section_data["OPEN SEATS"] = int(open_seats)
-
-        waitlist_span = section.find('span', class_='waitlist-count')
-        section_data["WAITLIST COUNT"] = int(waitlist_span.text.strip()) if waitlist_span else 0
-
-        times = section.find('div', class_="class-days-container")
-        times = times.find_all('div', class_='row')
-
+        times_container = section.find('div', class_="class-days-container")
         all_times = []
-        # Iterating through class-days-container
-        for i, time in enumerate(times):
-            days = time.find('span', class_='section-days')
-            has_specific_time = False
-            start_time = ""
-            end_time = ""
-
-            class_time = ""
-
+        for time in (times_container.find_all('div', class_='row') if times_container else []):
+            days = helper.text_of(time, 'span', 'section-days')
             if days:
-                days = days.text.strip()
-
-                if str(days).upper().find("TBA") != -1:
+                start_time = helper.text_of(time, 'span', 'class-start-time')
+                end_time = helper.text_of(time, 'span', 'class-end-time')
+                if "TBA" in days.upper() or not (start_time and end_time):
                     class_time = days
                 else:
-                    start_time = time.find('span', class_='class-start-time').text.strip()
-                    end_time = time.find('span', class_='class-end-time').text.strip()
                     class_time = f"{days} {start_time}-{end_time}"
             else:
-                message = find_message_div(time)
-                if message is None:
-                    # Handle case where no matching div was found
-                    message = "No class message found"
+                class_time = find_message_div(time) or "No class message found"
 
-                section_data["UNSPECIFIED TIME MESSAGE"] = message
-                class_time = message
-
-            class_type = time.find('div', class_='two columns')
-
-            if class_type:
-                class_type = class_type.text.strip().upper()
-            else:
-                class_type = "LECTURE"
+            class_type = helper.text_of(time, 'div', 'two columns')
+            class_type = class_type.upper() if class_type else "LECTURE"
 
             room = time.find('span', class_='class-building')
-
             if room:
-                building = room.find('span', class_='building-code')
+                building = helper.text_of(room, 'span', 'building-code')
                 if building:
-                    building = building.text.strip()
-                    room_number = room.find('span', class_='class-room')
-
-                    if room_number:
-                        room_number = room_number.text.strip()
-                        room = f"{building} {room_number}"
-                    else:
-                        room = building
+                    room_number = helper.text_of(room, 'span', 'class-room')
+                    room = f"{building} {room_number}" if room_number else building
                 else:
                     room = room.text.strip()
 
-            new_course_time = Course_Time(class_type, class_time, room)
-            all_times.append(new_course_time)
+            all_times.append(Course_Time(class_type, class_time, room))
 
-        section_data["CLASS TIMES"] = all_times
-
-        # Iterating through section-texts-container
+        special_restriction = None
         restrictions = section.find('div', class_="section-texts-container")
-
         if restrictions:
-            restrictions = restrictions.find_all('div', class_='section-text')
-
-            full_restriction = ""
-            for i, restriction in enumerate(restrictions):
+            lines = []
+            for restriction in restrictions.find_all('div', class_='section-text'):
                 link = helper.extract_link_from_html(str(restriction))
+                lines.append(f"{restriction.text}: {link}" if link else restriction.text)
+            special_restriction = "\n".join(lines)
 
-                new_line = "\n"
-
-                if i + 1 == len(restrictions):
-                    new_line = ""
-
-                if link:
-                    full_restriction += f"{restriction.text}: {link}{new_line}"
-                else:
-                    full_restriction += f"{restriction.text}{new_line}"
-
-            section_data["SPECIAL RESTRICTION"] = full_restriction
-
-        course_data = Course_With_Section_Info(
-            section_data["COURSE NUMBER"],
-            section_data["COURSE TITLE"],
-            section_data["SEMESTER"],
-            section_data["MINIMUM CREDITS"],
-            section_data["MAXIMUM CREDITS"],
-            section_data["GRADING METHOD"],
-            section_data["GEN_EDS FULFILLED"],
-            section_data["SECTION ID"],
-            section_data["INSTRUCTOR"],
-            section_data["TOTAL SEATS"],
-            section_data["OPEN SEATS"],
-            section_data["WAITLIST COUNT"],
-            section_data["CLASS TIMES"],
-            section_data["IS NORMAL"],
-            section_data["IS BLENDED (NORMAL AND ONLINE)"],
-            section_data["IS ONLINE"],
-            section_data["SPECIAL RESTRICTION"],
-            section_data["PREREQUISITE"],
-            section_data["COREQUISITE"],
-            section_data["RESTRICTION"],
-            section_data["CREDIT ONLY GRANTED FOR"],
-            section_data["FORMERLY"],
-            section_data["RECOMMENDED"],
-            section_data["CROSS-LISTED WITH"],
-            section_data["DESCRIPTION"].replace("\n", "")
-        )
-
-        data.append(course_data)
+        data.append(Course_With_Section_Info(
+            course_number,
+            section_title,
+            term_id,
+            section_min_credits,
+            section_max_credits,
+            section_grading,
+            description_fields["GEN_EDS FULFILLED"],
+            section_id,
+            ", ".join(instructors) or None,
+            helper.parse_int(helper.text_of(section, 'span', 'total-seats-count')),
+            helper.parse_int(helper.text_of(section, 'span', 'open-seats-count')),
+            helper.parse_int(helper.text_of(section, 'span', 'waitlist-count')) or 0,
+            all_times,
+            is_normal,
+            is_blended,
+            is_online,
+            special_restriction,
+            description_fields["PREREQUISITE"],
+            description_fields["COREQUISITE"],
+            description_fields["RESTRICTION"],
+            description_fields["CREDIT ONLY GRANTED FOR"],
+            description_fields["FORMERLY"],
+            description_fields["RECOMMENDED"],
+            description_fields["CROSS-LISTED WITH"],
+            clean_description(description_fields["DESCRIPTION"]),
+        ))
 
     return data
