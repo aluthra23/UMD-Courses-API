@@ -92,6 +92,27 @@ class ClassSectionsEndpointTests(unittest.TestCase):
         self.assertEqual(response.status_code, 503)
 
 
+CATALOG_HTML = """
+<div class="courseblock">
+  <p class="courseblocktitle noindent"><strong>ENGL274 Introduction to African American Literature (3 Credits)</strong></p>
+  <p class="courseblockdesc noindent">A survey of African American literature.</p>
+  <p class="courseblockextra noindent">Formerly:  ENGL289M.</p>
+  <p class="courseblockextra noindent">Cross-listed with: AASP274.</p>
+  <p class="courseblockextra noindent">Repeatable to:   6 credits if content differs.</p>
+</div>
+"""
+
+
+class CatalogScraperTests(unittest.TestCase):
+    def test_formerly_and_cross_listed_are_filled(self):
+        from course_catalog_scraper import scraper
+        with mock.patch.object(scraper.http_utils, "fetch", side_effect=[html_response(CATALOG_HTML), None]):
+            [course] = scraper.scrape_course_catalog_data("ENGL", "274")
+        self.assertEqual(course.formerly_named, "ENGL289M")
+        self.assertEqual(course.cross_listed, "AASP274")
+        self.assertEqual(course.repeatable_to, "6 credits if content differs")
+
+
 class OtherEndpointTests(unittest.TestCase):
     def test_catalog_failure_is_503(self):
         with mock.patch.object(main, "scrape_course_catalog_data", side_effect=requests.Timeout()):

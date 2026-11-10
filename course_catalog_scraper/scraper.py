@@ -62,16 +62,9 @@ def scrape_courses(courses, course_acronym, specific_course_number, used_courses
         description = helper.text_of(course_block, 'p', 'courseblockdesc noindent')
         course_dict["DESCRIPTION"] = description.replace("\n", "") if description else None
 
-        extras = course_block.find_all('p', class_='courseblockextra noindent')
-        for extra in extras:
-            extra_description = extra.text
-            label, description = helper.parse_extra(extra_description)
-
-            if course_dict["CROSS-LISTED"]:
-                course_dict[label.upper()] = helper.remove_period_end(description)
-            else:
-                course_dict[label.upper()], course_dict["CROSS-LISTED"] = (
-                    helper.string_without_delimiter(helper.remove_period_end(description), "Cross-listed with"))
+        extras = [extra.text for extra in course_block.find_all('p', class_='courseblockextra noindent')]
+        # The API's Course model has no field for ADDITIONAL INFORMATION, so it is left out here.
+        course_dict.update(helper.catalog_extra_fields(extras))
 
         course_info = Course(
             course_dict["COURSE NUMBER"],

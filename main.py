@@ -146,7 +146,8 @@ def get_all_course_prefixes():
     with universal_lock:
         try:
             return update_umd_courses("./course_prefixes_dataset_creation/umd_course_prefixes.csv")
-        except requests.RequestException:
+        except (requests.RequestException, RuntimeError):
+            # RuntimeError: Testudo returned a page with no prefixes on it.
             raise UMD_UNAVAILABLE
 
 
